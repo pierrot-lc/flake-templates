@@ -1,6 +1,11 @@
 {
-  # Simply use `uv add torch` to install PyTorch in the venv.
-  description = "PyTorch devShell";
+  # Use `uv add jax[cuda12_local]` to install JAX in the venv.
+
+  # Because of how NixOS works you can't install JAX with CUDA built by JAX
+  # itself. Hence this flakes provides all the tiny little details to point JAX
+  # to Nix's CUDA packages.
+
+  description = "JAX devShell";
 
   nixConfig = {
     extra-substituters = [
@@ -48,18 +53,19 @@
     ];
 
     shell = pkgs.mkShell {
-      name = "pytorch-devshell";
+      name = "jax-devshell";
       inherit packages;
 
       env = {
-        CC = "${pkgs.gcc}/bin/gcc"; # For `torch.compile`.
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath libs;
+        XLA_FLAGS = "--xla_gpu_cuda_data_dir=${cudaPackages.cudatoolkit}";
       };
 
       venvDir = "./.venv";
       postShellHook = ''
         uv sync
-        just device-check
+        export PATH="$PATH:${cudaPackages.cudatoolkit}/bin"  # Add ptxas to PATH.
+        just tests
       '';
     };
   in {
