@@ -63,9 +63,10 @@
 
       venvDir = "./.venv";
       postShellHook = ''
-        uv sync
         export PATH="$PATH:${cudaPackages.cudatoolkit}/bin"  # Add ptxas to PATH.
-        just tests
+
+        uv sync
+        just device-check
       '';
     };
   in {
